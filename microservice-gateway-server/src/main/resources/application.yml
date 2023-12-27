@@ -1,0 +1,44 @@
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 20s
+        permitted-number-of-calls-in-half-open-state: 6
+        slow-call-rate-threshold: 50
+        slow-call-duration-threshold: 2s
+    instances:
+      clients:
+        base-config: default
+      accounts:
+        base-config: default
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 3s
+    instances:
+      clients:
+        base-config: default
+      accounts:
+        base-config: default
+
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: client-management-service
+          uri: lb://client-management-service
+          predicates:
+            - Path=/api/mgmt/**
+          filters:
+            - CircuitBreaker=clients
+            - StripPrefix=2
+
+        - id: account-management-service
+          uri: lb://account-management-service
+          predicates:
+            - Path=/api/business/**
+          filters:
+            - CircuitBreaker=accounts
+            - StripPrefix=2
